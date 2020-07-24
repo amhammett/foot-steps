@@ -1,0 +1,86 @@
+service: foot-steps
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  apiGateway:
+    binaryMediaTypes:
+      - '*/*'
+  logRetentionInDays: 7
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+package:
+  exclude:
+    - node_modules/**
+  include:
+    - node_modules/@babel/**
+    - node_modules/@jimp/**
+    - node_modules/any-base/**
+    - node_modules/bmp-js/**
+    - node_modules/buffer-equal/**
+    - node_modules/exif-parser/**
+    - node_modules/gifwrap/**
+    - node_modules/image-q/**
+    - node_modules/jimp/**
+    - node_modules/jpeg-js/**
+    - node_modules/load-bmfont/**
+    - node_modules/mime/**
+    - node_modules/mkdirp/**
+    - node_modules/omggif/**
+    - node_modules/pako/**
+    - node_modules/parse-bmfont-ascii/**
+    - node_modules/parse-bmfont-binary/**
+    - node_modules/parse-bmfont-xml/**
+    - node_modules/phin/**
+    - node_modules/pixelmatch/**
+    - node_modules/pngjs/**
+    - node_modules/regenerator-runtime/**
+    - node_modules/sax/**
+    - node_modules/timm/**
+    - node_modules/tinycolor2/**
+    - node_modules/utif/**
+    - node_modules/uuid/**
+    - node_modules/xml2js/**
+    - node_modules/xmlbuilder/**
+    - src/**.js
+
+functions:
+  create:
+    handler: src/index.create
+    events:
+      - http:
+          path: footsteps.bmp
+          method: get
+
+resources:
+  Resources:
+    Footsteps:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+
